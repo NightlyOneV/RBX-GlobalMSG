@@ -1,5 +1,6 @@
 import customtkinter as ctk 
 import requests 
+from CTkColorPicker import *
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
@@ -16,8 +17,11 @@ class App(ctk.CTk):
         super().__init__()
         
         self.title("DBGT - Announcements System")
-        self.geometry("700x350")
+        self.geometry("700x450")
         self.resizable(False, False)
+
+        self.HEADER_COLOR = "#FFFFFF"
+        self.CONTENT_COLOR = "#FFFFFF"
 
         #region TAB SECTIONS
         
@@ -54,8 +58,11 @@ class App(ctk.CTk):
         #endregion
         
         #region GLOBAL ANNOUNCEMENT SEND MESSAGE
-        self.GLOBAL_ANNOUNCEMENT_SEND = ctk.CTkButton(self.GLOBAL_ANNOUNCEMENT_TAB_SWITCH,width = 660, height = 50, text="SEND MESSAGE", command=self.GLOBAL_ANNOUNCEMENT_EVENT)
-        self.GLOBAL_ANNOUNCEMENT_SEND.pack(pady=10)
+        self.GLOBAL_ANNOUNCEMENT_HEADER_COLOR = ctk.CTkButton(self.GLOBAL_ANNOUNCEMENT_TAB_SWITCH, width = 200, height=50, text="SELECT HEADER COLOR", command=lambda: self.ASK_U_COLOR)
+        self.GLOBAL_ANNOUNCEMENT_HEADER_COLOR.pack(pady=5)
+
+        self.GLOBAL_ANNOUNCEMENT_SEND = ctk.CTkButton(self.GLOBAL_ANNOUNCEMENT_TAB_SWITCH,width = 150, height = 50, text="SEND MESSAGE", command=self.GLOBAL_ANNOUNCEMENT_EVENT, fg_color='red', hover_color='dark red')
+        self.GLOBAL_ANNOUNCEMENT_SEND.pack(pady=5)
         
         #endregion
        
@@ -83,23 +90,52 @@ class App(ctk.CTk):
 
         #endregion
 
-        #region GLOBAL MESSAGE SEND 
+        #region GLOBAL MESSAGE BUTTONS 
         
-        self.GLOBAL_MESSAGE_SEND = ctk.CTkButton(self.GLOBAL_MESSAGE_TAB_SWITCH, width = 660, height = 50, text="SEND MESSAGE", command=self.GLOBAL_MESSAGE_EVENT)
-        self.GLOBAL_MESSAGE_SEND.pack(pady=10)
+        self.GLOBAL_MESSAGE_COLOR_PICKER = ctk.CTkButton(self.GLOBAL_MESSAGE_TAB_SWITCH, width = 200, height=50, text="SELECT CHAT COLOR", command=self.ASK_U_COLOR("Msg"))
+        self.GLOBAL_MESSAGE_COLOR_PICKER.pack(padx=0, pady=5)
+
+        self.GLOBAL_MESSAGE_SEND = ctk.CTkButton(self.GLOBAL_MESSAGE_TAB_SWITCH, width = 200, height = 50, text="SEND MESSAGE", command=self.GLOBAL_MESSAGE_EVENT, fg_color='red', hover_color='dark red')
+        self.GLOBAL_MESSAGE_SEND.pack(padx=0,pady=5)
 
         #endregion
 
-
         #endregion
 
-    def ERROR_WARNING(self, errorcode):
+    def ASK_U_COLOR(self, whatType):
+        print(whatType)
+        pickingColor = AskColor()
+        color = pickingColor.get()
+        
+        match whatType:
+            case "Header":
+                self.HEADER_COLOR = color
+                self.APPLY_COLOR("Announce")
+            case "Content":
+                self.CONTENT_COLOR = color
+                self.APPLY_COLOR("Announce")
+            case "Msg":
+                self.MSG_COLOR = color
+                self.APPLY_COLOR("Msg")
+
+      
+
+    def APPLY_COLOR(self, whatType ):
+        match whatType:
+            case "Msg":
+                self.EXPL_GLOBAL_MESSAGE_TXT.configure(text_color=self.MSG_COLOR)
+            case "Announce":
+                self.EXPL_GLOBAL_ANNOUNCEMENT_TITLE.configure(text_color=self.HEADER_COLOR)
+                self.EXPL_GLOBAL_ANNOUNCEMENT_TXT.configure(text_color=self.CONTENT_COLOR)
+
+    def ERROR_WARNING(self, errorCode, errorReason):
         ERROR_WINDOW = ctk.CTkToplevel(self)
         ERROR_WINDOW.title("ERROR")
         ERROR_WINDOW.geometry = "300x200"
         ERROR_WINDOW.resizable(False, False)
-        
-        ERROR_LABEL = ctk.CTkLabel(ERROR_WINDOW, width=250, height=150, text=f"ERROR {errorcode}")
+        ERROR_WINDOW.focus()
+
+        ERROR_LABEL = ctk.CTkLabel(ERROR_WINDOW, width=250, height=150, text=f"ERROR {errorCode} | {errorReason}")
         ERROR_LABEL.pack(pady=5)
 
     def FIRE_MESSAGING_SERVICE(self, HEADER, CONTENT, TYPE):
@@ -110,12 +146,11 @@ class App(ctk.CTk):
             POST_HEADERS = {'x-api-key':API_KEY, 'Content-Type': 'application/json'}    
             
             reqStatus = requests.post(POST_MESSAGING_SERVICE_API, json=POST_MESSAGE, headers=POST_HEADERS)
-            print(reqStatus.reason)
             
             if reqStatus.status_code == 200:
                 print("Message Sent!")
             else:
-                self.ERROR_WARNING(reqStatus.status_code)
+                self.ERROR_WARNING(reqStatus.status_code, reqStatus.reason)
             
         else:
             
