@@ -1,7 +1,14 @@
 import customtkinter as ctk 
+import requests 
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
+
+#region API KEY
+API_KEY = ""
+#endregion
+
+
 
 class App(ctk.CTk):
     
@@ -83,21 +90,58 @@ class App(ctk.CTk):
 
         #endregion
 
+
         #endregion
+
+    def ERROR_WARNING(self, errorcode):
+        ERROR_WINDOW = ctk.CTkToplevel(self)
+        ERROR_WINDOW.title("ERROR")
+        ERROR_WINDOW.geometry = "300x200"
+        ERROR_WINDOW.resizable(False, False)
+        
+        ERROR_LABEL = ctk.CTkLabel(ERROR_WINDOW, width=250, height=150, text=f"ERROR {errorcode}")
+        ERROR_LABEL.pack(pady=5)
+
+    def FIRE_MESSAGING_SERVICE(self, HEADER, CONTENT, TYPE):
+        if TYPE == "GA":
+            
+            POST_MESSAGING_SERVICE_API = "https://apis.roblox.com/messaging-service/v1/universes/6312078066/topics/GLOBALANNOUNCE"
+            POST_MESSAGE = {'message':f"{HEADER}ç{CONTENT}"}
+            POST_HEADERS = {'x-api-key':API_KEY, 'Content-Type': 'application/json'}    
+            
+            reqStatus = requests.post(POST_MESSAGING_SERVICE_API, json=POST_MESSAGE, headers=POST_HEADERS)
+            print(reqStatus.reason)
+            
+            if reqStatus.status_code == 200:
+                print("Message Sent!")
+            else:
+                self.ERROR_WARNING(reqStatus.status_code)
+            
+        else:
+            
+            POST_MESSAGING_SERVICE_API = "https://apis.roblox.com/messaging-service/v1/universes/6312078066/topics/GLOBALMESSAGE"
+            POST_MESSAGE = {'message':f"{HEADER}ç{CONTENT}"}
+            POST_HEADERS = {'x-api-key':API_KEY, 'Content-Type': 'application/json'}    
+            
+            reqStatus = requests.post(POST_MESSAGING_SERVICE_API, json=POST_MESSAGE, headers=POST_HEADERS)
+            
+            if reqStatus.status_code == 200:
+                print("Message Sent!")
+            else:
+                self.ERROR_WARNING(reqStatus.status_code)
+
 
     def GLOBAL_ANNOUNCEMENT_EVENT(self):
         TITLE_text = self.GLOBAL_ANNOUNCEMENT_TITLE.get("0.0", "end")
         MSG_text = self.GLOBAL_ANNOUNCEMENT_TXT.get("0.0", "end")
 
-        print(TITLE_text)
-        print(MSG_text)
+        self.FIRE_MESSAGING_SERVICE(TITLE_text, MSG_text, "GA")
         
     def GLOBAL_MESSAGE_EVENT(self):
         TITLE_text = self.GLOBAL_MESSAGE_TITLE.get("0.0", "end")
         MSG_Text = self.GLOBAL_MESSAGE_TXT.get("0.0", "end")
 
-        print(TITLE_text)
-        print(MSG_Text)
+        self.FIRE_MESSAGING_SERVICE(TITLE_text, MSG_Text, "GM")
 
 Program = App()
 Program.mainloop()
